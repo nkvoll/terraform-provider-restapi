@@ -10,7 +10,7 @@ import (
  * Accepts a third argument that is a set of fields that are to be ignored when looking for differences.
  * Returns 1. the recordedResource overlaid with fields that have been modified in actualResource but not ignored, and 2. a bool true if there were any changes.
  */
-func getDelta(recordedResource map[string]interface{}, actualResource map[string]interface{}, ignoreList []string, includeList []string) (modifiedResource map[string]interface{}, hasChanges bool) {
+func getDelta(recordedResource map[string]interface{}, actualResource map[string]interface{}, ignoreList []string, includeMap map[string]interface{}) (modifiedResource map[string]interface{}, hasChanges bool) {
 	modifiedResource = map[string]interface{}{}
 	hasChanges = false
 
@@ -27,9 +27,11 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 			continue
 		}
 		// if include_list does not contain the current key, don't coompare
-		if len(includeList) > 0 && !contains(includeList, key) {
-			modifiedResource[key] = valRecorded
-			continue
+		if includeMap != nil {
+			if _, ok := includeMap[key]; !ok {
+				modifiedResource[key] = valRecorded
+				continue
+			}
 		}
 
 		valActual := actualResource[key]
@@ -44,8 +46,18 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 			}
 			// Recursively compare
 			deeperIgnoreList := _descendIgnoreList(key, ignoreList)
-			deeperIncludeList := _descendIgnoreList(key, includeList)
-			if modifiedSubResource, hasChange := getDelta(subMapA, subMapB, deeperIgnoreList, deeperIncludeList); hasChange {
+
+			var nextIncludeMap map[string]interface{}
+			if includeMap != nil {
+				next := includeMap[key]
+				nextMap, ok := next.(map[string]interface{})
+				if !ok {
+					modifiedResource[key] = valRecorded
+					continue
+				}
+				nextIncludeMap = nextMap
+			}
+			if modifiedSubResource, hasChange := getDelta(subMapA, subMapB, deeperIgnoreList, nextIncludeMap); hasChange {
 				modifiedResource[key] = modifiedSubResource
 				hasChanges = true
 			} else {
