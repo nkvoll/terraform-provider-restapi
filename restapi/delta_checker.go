@@ -10,12 +10,12 @@ import (
  * Accepts a third argument that is a set of fields that are to be ignored when looking for differences.
  * Returns 1. the recordedResource overlaid with fields that have been modified in actualResource but not ignored, and 2. a bool true if there were any changes.
  */
-func getDelta(recordedResource map[string]interface{}, actualResource map[string]interface{}, ignoreList []string) (modifiedResource map[string]interface{}, hasChanges bool) {
-	modifiedResource = map[string]interface{} {}
+func getDelta(recordedResource map[string]interface{}, actualResource map[string]interface{}, ignoreList []string, includeList []string) (modifiedResource map[string]interface{}, hasChanges bool) {
+	modifiedResource = map[string]interface{}{}
 	hasChanges = false
 
 	// Keep track of keys we've already checked in actualResource to reduce work when checking keys in actualResource
-	checkedKeys := map[string]struct{} {}
+	checkedKeys := map[string]struct{}{}
 
 	for key, valRecorded := range recordedResource {
 
@@ -23,6 +23,11 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 
 		// If the ignore_list contains the current key, don't compare
 		if contains(ignoreList, key) {
+			modifiedResource[key] = valRecorded
+			continue
+		}
+		// if include_list does not contain the current key, don't coompare
+		if len(includeList) > 0 && !contains(includeList, key) {
 			modifiedResource[key] = valRecorded
 			continue
 		}
@@ -39,7 +44,8 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 			}
 			// Recursively compare
 			deeperIgnoreList := _descendIgnoreList(key, ignoreList)
-			if modifiedSubResource, hasChange := getDelta(subMapA, subMapB, deeperIgnoreList); hasChange {
+			deeperIncludeList := _descendIgnoreList(key, includeList)
+			if modifiedSubResource, hasChange := getDelta(subMapA, subMapB, deeperIgnoreList, deeperIncludeList); hasChange {
 				modifiedResource[key] = modifiedSubResource
 				hasChanges = true
 			} else {
@@ -48,15 +54,15 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 		} else if reflect.TypeOf(valRecorded).Kind() == reflect.Slice {
 			// Since we don't support ignoring differences in lists (besides ignoring the list as a
 			// whole), it is safe to deep compare the two list values.
-			if ! reflect.DeepEqual(valRecorded, valActual) {
+			if !reflect.DeepEqual(valRecorded, valActual) {
 				modifiedResource[key] = valActual
 				hasChanges = true
 			} else {
 				modifiedResource[key] = valRecorded
 			}
 		} else if valRecorded != valActual {
-				modifiedResource[key] = valActual
-				hasChanges = true
+			modifiedResource[key] = valActual
+			hasChanges = true
 		} else {
 			// In this case, the recorded and actual values were the same
 			modifiedResource[key] = valRecorded

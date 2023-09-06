@@ -192,6 +192,14 @@ func resourceRestAPI() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
+			"include_changes_to": {
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Description: "A list of fields to which remote changes will be included in comparison. Default to the empty list which means all changes are included. To include changes to nested fields, use the dot syntax: 'metadata.timestamp'",
+				Sensitive:   isDataSensitive,
+				// TODO ValidateFunc not supported for lists, but should probably validate that the ignore paths are valid
+			},
 		}, /* End schema */
 
 	}
@@ -292,18 +300,26 @@ func resourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 		setResourceState(obj, d)
 
 		// Check whether the remote resource has changed.
-		if ! (d.Get("ignore_all_server_changes")).(bool) {
+		if !(d.Get("ignore_all_server_changes")).(bool) {
 			ignoreList := []string{}
 			v, ok := d.GetOk("ignore_changes_to")
 			if ok {
 				for _, s := range v.([]interface{}) {
-					ignoreList = append(ignoreList, s.(string));
+					ignoreList = append(ignoreList, s.(string))
+				}
+			}
+
+			includeList := []string{}
+			v, ok = d.GetOk("include_changes_to")
+			if ok {
+				for _, s := range v.([]interface{}) {
+					includeList = append(includeList, s.(string))
 				}
 			}
 
 			// This checks if there were any changes to the remote resource that will need to be corrected
 			// by comparing the current state with the response returned by the api.
-			modifiedResource, hasDifferences := getDelta(obj.data, obj.apiData, ignoreList)
+			modifiedResource, hasDifferences := getDelta(obj.data, obj.apiData, ignoreList, includeList)
 
 			if hasDifferences {
 				log.Printf("resource_api_object.go: Found differences in remote resource\n")
