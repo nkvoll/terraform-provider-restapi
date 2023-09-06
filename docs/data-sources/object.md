@@ -35,6 +35,9 @@ data "restapi_object" "John" {
 - `id_attribute` (String) Defaults to `id_attribute` set on the provider. Allows per-resource override of `id_attribute` (see `id_attribute` provider config documentation)
 - `query_string` (String) An optional query string to send when performing the search.
 - `read_query_string` (String) Defaults to `query_string` set on data source. This key allows setting a different or empty query string for reading the object.
+- `create_query_string` (String) Defaults to `query_string` set on data source. This key allows setting a different or empty query string for creating the object.
+- `update_query_string` (String) Defaults to `query_string` set on data source. This key allows setting a different or empty query string for updating the object.
+- `destroy_query_string` (String) Defaults to `query_string` set on data source. This key allows setting a different or empty query string for destroying the object.
 - `results_key` (String) When issuing a GET to the path, this JSON key is used to locate the results array. The format is 'field/field/field'. Example: 'results/values'. If omitted, it is assumed the results coming back are already an array and are to be used exactly as-is.
 - `search_path` (String) The API path on top of the base URL set in the provider that represents the location to search for objects of this type on the API server. If not set, defaults to the value of path.
 

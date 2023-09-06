@@ -197,10 +197,13 @@ func resourceRestAPI() *schema.Resource {
 	}
 }
 
-/* Since there is nothing in the ResourceData structure other
-   than the "id" passed on the command line, we have to use an opinionated
-   view of the API paths to figure out how to read that object
-   from the API */
+/*
+Since there is nothing in the ResourceData structure other
+
+	than the "id" passed on the command line, we have to use an opinionated
+	view of the API paths to figure out how to read that object
+	from the API
+*/
 func resourceRestAPIImport(d *schema.ResourceData, meta interface{}) (imported []*schema.ResourceData, err error) {
 	input := d.Id()
 
@@ -380,10 +383,13 @@ func resourceRestAPIExists(d *schema.ResourceData, meta interface{}) (exists boo
 	return exists, err
 }
 
-/* Simple helper routine to build an api_object struct
-   for the various calls terraform will use. Unfortunately,
-   terraform cannot just reuse objects, so each CRUD operation
-   results in a new object created */
+/*
+Simple helper routine to build an api_object struct
+
+	for the various calls terraform will use. Unfortunately,
+	terraform cannot just reuse objects, so each CRUD operation
+	results in a new object created
+*/
 func makeAPIObject(d *schema.ResourceData, meta interface{}) (*APIObject, error) {
 	opts, err := buildAPIObjectOpts(d)
 	if err != nil {
@@ -456,6 +462,18 @@ func buildAPIObjectOpts(d *schema.ResourceData) (*apiObjectOpts, error) {
 	}
 	if v, ok := d.GetOk("query_string"); ok {
 		opts.queryString = v.(string)
+	}
+	if v, ok := d.GetOk("read_query_string"); ok {
+		opts.readQueryString = v.(string)
+	}
+	if v, ok := d.GetOk("create_query_string"); ok {
+		opts.createQueryString = v.(string)
+	}
+	if v, ok := d.GetOk("update_query_string"); ok {
+		opts.updateQueryString = v.(string)
+	}
+	if v, ok := d.GetOk("destroy_query_string"); ok {
+		opts.destroyQueryString = v.(string)
 	}
 
 	readSearch := expandReadSearch(d.Get("read_search").(map[string]interface{}))
