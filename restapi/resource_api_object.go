@@ -116,6 +116,26 @@ func resourceRestAPI() *schema.Resource {
 				Description: "Query string to be included in the path",
 				Optional:    true,
 			},
+			"read_query_string": {
+				Type:        schema.TypeString,
+				Description: "Query string to be included in the path",
+				Optional:    true,
+			},
+			"create_query_string": {
+				Type:        schema.TypeString,
+				Description: "Query string to be included in the path",
+				Optional:    true,
+			},
+			"update_query_string": {
+				Type:        schema.TypeString,
+				Description: "Query string to be included in the path",
+				Optional:    true,
+			},
+			"delete_query_string": {
+				Type:        schema.TypeString,
+				Description: "Query string to be included in the path",
+				Optional:    true,
+			},
 			"api_data": {
 				Type: schema.TypeMap,
 				Elem: &schema.Schema{
