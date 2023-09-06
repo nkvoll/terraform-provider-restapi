@@ -26,7 +26,7 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 			modifiedResource[key] = valRecorded
 			continue
 		}
-		// if include_list does not contain the current key, don't coompare
+		// if include_changes_to does not contain the current key, don't compare
 		if includeMap != nil {
 			if _, ok := includeMap[key]; !ok {
 				modifiedResource[key] = valRecorded
@@ -93,6 +93,13 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 		// Don't modify modifiedResource either - we don't want this key to be tracked
 		if contains(ignoreList, key) {
 			continue
+		}
+		// if include_changes_to does not contain the current key, don't compare
+		// Don't modify modifiedResource either - we don't want this key to be tracked
+		if includeMap != nil {
+			if _, ok := includeMap[key]; !ok {
+				continue
+			}
 		}
 
 		// If we've gotten here, that means actualResource has an additional key that wasn't in recordedResource
