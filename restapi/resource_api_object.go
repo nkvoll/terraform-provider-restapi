@@ -193,12 +193,21 @@ func resourceRestAPI() *schema.Resource {
 				Default:     false,
 			},
 			"include_changes_to": {
-				Type:        schema.TypeMap,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "An object that matches the structure of the data to which remote changes will be included in comparison. Default to the empty object which means all changes are included. ",
 				Sensitive:   isDataSensitive,
-				// TODO ValidateFunc not supported for lists, but should probably validate that the ignore paths are valid
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					v := val.(string)
+					if v != "" {
+						data := make(map[string]interface{})
+						err := json.Unmarshal([]byte(v), &data)
+						if err != nil {
+							errs = append(errs, fmt.Errorf("destroy_data attribute is invalid JSON: %v", err))
+						}
+					}
+					return warns, errs
+				},
 			},
 		}, /* End schema */
 
@@ -309,10 +318,12 @@ func resourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 				}
 			}
 
-			var includeMap map[string]interface{} = nil
+			var includeMap map[string]interface{}
 			v, ok = d.GetOk("include_changes_to")
 			if ok {
-				includeMap = v.(map[string]interface{})
+				if err := json.Unmarshal([]byte(v.(string)), &includeMap); err != nil {
+					return err
+				}
 			}
 
 			// This checks if there were any changes to the remote resource that will need to be corrected
@@ -326,7 +337,9 @@ func resourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 					return err
 				}
 				jsonString := string(encoded)
-				d.Set("data", jsonString)
+				if err := d.Set("data", jsonString); err != nil {
+					return err
+				}
 			}
 		}
 
