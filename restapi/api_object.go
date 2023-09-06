@@ -12,43 +12,51 @@ import (
 )
 
 type apiObjectOpts struct {
-	path          string
-	getPath       string
-	postPath      string
-	putPath       string
-	createMethod  string
-	readMethod    string
-	updateMethod  string
-	updateData    string
-	destroyMethod string
-	destroyData   string
-	deletePath    string
-	searchPath    string
-	queryString   string
-	debug         bool
-	readSearch    map[string]string
-	id            string
-	idAttribute   string
-	data          string
+	path               string
+	getPath            string
+	postPath           string
+	putPath            string
+	createMethod       string
+	readMethod         string
+	updateMethod       string
+	updateData         string
+	destroyMethod      string
+	destroyData        string
+	deletePath         string
+	searchPath         string
+	queryString        string
+	readQueryString    string
+	createQueryString  string
+	updateQueryString  string
+	destroyQueryString string
+	debug              bool
+	readSearch         map[string]string
+	id                 string
+	idAttribute        string
+	data               string
 }
 
 /*APIObject is the state holding struct for a restapi_object resource*/
 type APIObject struct {
-	apiClient     *APIClient
-	getPath       string
-	postPath      string
-	putPath       string
-	createMethod  string
-	readMethod    string
-	updateMethod  string
-	destroyMethod string
-	deletePath    string
-	searchPath    string
-	queryString   string
-	debug         bool
-	readSearch    map[string]string
-	id            string
-	idAttribute   string
+	apiClient          *APIClient
+	getPath            string
+	postPath           string
+	putPath            string
+	createMethod       string
+	readMethod         string
+	updateMethod       string
+	destroyMethod      string
+	deletePath         string
+	searchPath         string
+	queryString        string
+	readQueryString    string
+	createQueryString  string
+	updateQueryString  string
+	destroyQueryString string
+	debug              bool
+	readSearch         map[string]string
+	id                 string
+	idAttribute        string
 
 	/* Set internally */
 	data        map[string]interface{} /* Data as managed by the user */
@@ -108,25 +116,29 @@ func NewAPIObject(iClient *APIClient, opts *apiObjectOpts) (*APIObject, error) {
 	}
 
 	obj := APIObject{
-		apiClient:     iClient,
-		getPath:       opts.getPath,
-		postPath:      opts.postPath,
-		putPath:       opts.putPath,
-		createMethod:  opts.createMethod,
-		readMethod:    opts.readMethod,
-		updateMethod:  opts.updateMethod,
-		destroyMethod: opts.destroyMethod,
-		deletePath:    opts.deletePath,
-		searchPath:    opts.searchPath,
-		queryString:   opts.queryString,
-		debug:         opts.debug,
-		readSearch:    opts.readSearch,
-		id:            opts.id,
-		idAttribute:   opts.idAttribute,
-		data:          make(map[string]interface{}),
-		updateData:    make(map[string]interface{}),
-		destroyData:   make(map[string]interface{}),
-		apiData:       make(map[string]interface{}),
+		apiClient:          iClient,
+		getPath:            opts.getPath,
+		postPath:           opts.postPath,
+		putPath:            opts.putPath,
+		createMethod:       opts.createMethod,
+		readMethod:         opts.readMethod,
+		updateMethod:       opts.updateMethod,
+		destroyMethod:      opts.destroyMethod,
+		deletePath:         opts.deletePath,
+		searchPath:         opts.searchPath,
+		queryString:        opts.queryString,
+		readQueryString:    opts.readQueryString,
+		createQueryString:  opts.createQueryString,
+		updateQueryString:  opts.updateQueryString,
+		destroyQueryString: opts.destroyQueryString,
+		debug:              opts.debug,
+		readSearch:         opts.readSearch,
+		id:                 opts.id,
+		idAttribute:        opts.idAttribute,
+		data:               make(map[string]interface{}),
+		updateData:         make(map[string]interface{}),
+		destroyData:        make(map[string]interface{}),
+		apiData:            make(map[string]interface{}),
 	}
 
 	if opts.data != "" {
@@ -195,6 +207,10 @@ func (obj *APIObject) toString() string {
 	buffer.WriteString(fmt.Sprintf("put_path: %s\n", obj.putPath))
 	buffer.WriteString(fmt.Sprintf("delete_path: %s\n", obj.deletePath))
 	buffer.WriteString(fmt.Sprintf("query_string: %s\n", obj.queryString))
+	buffer.WriteString(fmt.Sprintf("read_query_string: %s\n", obj.readQueryString))
+	buffer.WriteString(fmt.Sprintf("create_query_string: %s\n", obj.createQueryString))
+	buffer.WriteString(fmt.Sprintf("update_query_string: %s\n", obj.updateQueryString))
+	buffer.WriteString(fmt.Sprintf("destroy_query_string: %s\n", obj.destroyQueryString))
 	buffer.WriteString(fmt.Sprintf("create_method: %s\n", obj.createMethod))
 	buffer.WriteString(fmt.Sprintf("read_method: %s\n", obj.readMethod))
 	buffer.WriteString(fmt.Sprintf("update_method: %s\n", obj.updateMethod))
@@ -274,11 +290,11 @@ func (obj *APIObject) createObject() error {
 	b, _ := json.Marshal(obj.data)
 
 	postPath := obj.postPath
-	if obj.queryString != "" {
+	if obj.createQueryString != "" {
 		if obj.debug {
-			log.Printf("api_object.go: Adding query string '%s'", obj.queryString)
+			log.Printf("api_object.go: Adding query string '%s'", obj.createQueryString)
 		}
-		postPath = fmt.Sprintf("%s?%s", obj.postPath, obj.queryString)
+		postPath = fmt.Sprintf("%s?%s", obj.postPath, obj.createQueryString)
 	}
 
 	resultString, err := obj.apiClient.sendRequest(obj.createMethod, strings.Replace(postPath, "{id}", obj.id, -1), string(b))
@@ -314,11 +330,11 @@ func (obj *APIObject) readObject() error {
 	}
 
 	getPath := obj.getPath
-	if obj.queryString != "" {
+	if obj.readQueryString != "" {
 		if obj.debug {
-			log.Printf("api_object.go: Adding query string '%s'", obj.queryString)
+			log.Printf("api_object.go: Adding query string '%s'", obj.readQueryString)
 		}
-		getPath = fmt.Sprintf("%s?%s", obj.getPath, obj.queryString)
+		getPath = fmt.Sprintf("%s?%s", obj.getPath, obj.readQueryString)
 	}
 
 	resultString, err := obj.apiClient.sendRequest(obj.readMethod, strings.Replace(getPath, "{id}", obj.id, -1), "")
@@ -374,11 +390,11 @@ func (obj *APIObject) updateObject() error {
 	}
 
 	putPath := obj.putPath
-	if obj.queryString != "" {
+	if obj.updateQueryString != "" {
 		if obj.debug {
-			log.Printf("api_object.go: Adding query string '%s'", obj.queryString)
+			log.Printf("api_object.go: Adding query string '%s'", obj.updateQueryString)
 		}
-		putPath = fmt.Sprintf("%s?%s", obj.putPath, obj.queryString)
+		putPath = fmt.Sprintf("%s?%s", obj.putPath, obj.updateQueryString)
 	}
 
 	resultString, err := obj.apiClient.sendRequest(obj.updateMethod, strings.Replace(putPath, "{id}", obj.id, -1), string(b))
@@ -407,11 +423,11 @@ func (obj *APIObject) deleteObject() error {
 	}
 
 	deletePath := obj.deletePath
-	if obj.queryString != "" {
+	if obj.destroyQueryString != "" {
 		if obj.debug {
-			log.Printf("api_object.go: Adding query string '%s'", obj.queryString)
+			log.Printf("api_object.go: Adding query string '%s'", obj.destroyQueryString)
 		}
-		deletePath = fmt.Sprintf("%s?%s", obj.deletePath, obj.queryString)
+		deletePath = fmt.Sprintf("%s?%s", obj.deletePath, obj.destroyQueryString)
 	}
 
 	b := []byte{}

@@ -8,7 +8,7 @@ import (
 
 func dataSourceRestAPI() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceRestAPIRead,
+		Read:        dataSourceRestAPIRead,
 		Description: "Performs a cURL get command on the specified url.",
 
 		Schema: map[string]*schema.Schema{
@@ -34,6 +34,33 @@ func dataSourceRestAPI() *schema.Resource {
 				when read_query_string is not set at all in the configuration. */
 				Default:     "not-set",
 				Description: "Defaults to `query_string` set on data source. This key allows setting a different or empty query string for reading the object.",
+				Optional:    true,
+			},
+			"create_query_string": {
+				Type: schema.TypeString,
+				/* Setting to "not-set" helps differentiate between the cases where
+				read_query_string is explicitly set to zero-value for string ("") and
+				when read_query_string is not set at all in the configuration. */
+				Default:     "not-set",
+				Description: "Defaults to `query_string` set on data source. This key allows setting a different or empty query string for creating the object.",
+				Optional:    true,
+			},
+			"update_query_string": {
+				Type: schema.TypeString,
+				/* Setting to "not-set" helps differentiate between the cases where
+				read_query_string is explicitly set to zero-value for string ("") and
+				when read_query_string is not set at all in the configuration. */
+				Default:     "not-set",
+				Description: "Defaults to `query_string` set on data source. This key allows setting a different or empty query string for updating the object.",
+				Optional:    true,
+			},
+			"destroy_query_string": {
+				Type: schema.TypeString,
+				/* Setting to "not-set" helps differentiate between the cases where
+				read_query_string is explicitly set to zero-value for string ("") and
+				when read_query_string is not set at all in the configuration. */
+				Default:     "not-set",
+				Description: "Defaults to `query_string` set on data source. This key allows setting a different or empty query string for destroying the object.",
 				Optional:    true,
 			},
 			"search_key": {
@@ -90,6 +117,21 @@ func dataSourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 	readQueryString := d.Get("read_query_string").(string)
 	if readQueryString == "not-set" {
 		readQueryString = queryString
+	}
+
+	createQueryString := d.Get("create_query_string").(string)
+	if createQueryString == "not-set" {
+		createQueryString = queryString
+	}
+
+	updateQueryString := d.Get("update_query_string").(string)
+	if updateQueryString == "not-set" {
+		updateQueryString = queryString
+	}
+
+	destroyQueryString := d.Get("destroy_query_string").(string)
+	if destroyQueryString == "not-set" {
+		destroyQueryString = queryString
 	}
 
 	searchKey := d.Get("search_key").(string)
