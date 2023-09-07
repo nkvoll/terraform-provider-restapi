@@ -145,27 +145,6 @@ func resourceRestAPI() *schema.Resource {
 				Description: "Query string to be included in the path",
 				Optional:    true,
 			},
-			"api_data": {
-				Type: schema.TypeMap,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Description: "After data from the API server is read, this map will include k/v pairs usable in other terraform resources as readable objects. Currently the value is the golang fmt package's representation of the value (simple primitives are set as expected, but complex types like arrays and maps contain golang formatting).",
-				Computed:    true,
-				Sensitive:   isDataSensitive,
-			},
-			"api_response": {
-				Type:        schema.TypeString,
-				Description: "The raw body of the HTTP response from the last read of the object.",
-				Computed:    true,
-				Sensitive:   isDataSensitive,
-			},
-			"create_response": {
-				Type:        schema.TypeString,
-				Description: "The raw body of the HTTP response returned when creating the object.",
-				Computed:    true,
-				Sensitive:   isDataSensitive,
-			},
 			"force_new": {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -290,7 +269,7 @@ func resourceRestAPIImport(ctx context.Context, d *schema.ResourceData, meta int
 
 	err = obj.readObject(ctx)
 	if err == nil {
-		setResourceState(obj, d)
+		//setResourceState(obj, d)
 		/* Data that we set in the state above must be passed along
 		   as an item in the stack of imported data */
 		imported = append(imported, d)
@@ -310,9 +289,9 @@ func resourceRestAPICreate(ctx context.Context, d *schema.ResourceData, meta int
 	if err == nil {
 		/* Setting terraform ID tells terraform the object was created or it exists */
 		d.SetId(obj.id)
-		setResourceState(obj, d)
+		//setResourceState(obj, d)
 		/* Only set during create for APIs that don't return sensitive data on subsequent retrieval */
-		d.Set("create_response", obj.apiResponse)
+		//d.Set("create_response", obj.apiResponse)
 	}
 	return err
 }
@@ -335,7 +314,7 @@ func resourceRestAPIRead(ctx context.Context, d *schema.ResourceData, meta inter
 		log.Printf("resource_api_object.go: Read resource. Returned id is '%s'\n", obj.id)
 		d.SetId(obj.id)
 
-		setResourceState(obj, d)
+		//setResourceState(obj, d)
 
 		// Check whether the remote resource has changed.
 		if !(d.Get("ignore_all_server_changes")).(bool) {
@@ -396,7 +375,7 @@ func resourceRestAPIUpdate(ctx context.Context, d *schema.ResourceData, meta int
 
 	err = obj.updateObject(ctx)
 	if err == nil {
-		setResourceState(obj, d)
+		//setResourceState(obj, d)
 	}
 	return err
 }
