@@ -64,7 +64,6 @@ type APIObject struct {
 	updateData  map[string]interface{} /* Update data as managed by the user */
 	destroyData map[string]interface{} /* Destroy data as managed by the user */
 	apiData     map[string]interface{} /* Data as available from the API */
-	apiResponse string
 }
 
 // NewAPIObject makes an APIobject to manage a RESTful object in an API
@@ -245,9 +244,6 @@ func (obj *APIObject) updateState(state string) error {
 	if err != nil {
 		return err
 	}
-
-	/* Store response body for parsing via jsondecode() */
-	obj.apiResponse = state
 
 	/* A usable ID was not passed (in constructor or here),
 	   so we have to guess what it is from the data structure */
