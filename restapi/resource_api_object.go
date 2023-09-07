@@ -212,10 +212,10 @@ func resourceRestAPI() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
-			"include_changes_to": {
+			"drift_fields": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "An object that matches the structure of the data to which remote changes will be included in comparison. Default to the empty object which means all changes are included. ",
+				Description: "An object that matches the structure of the data to which remote changes will be considered when detecting drift. Default to the empty object which means all changes are included. ",
 				Sensitive:   isDataSensitive,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					v := val.(string)
@@ -338,17 +338,17 @@ func resourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 				}
 			}
 
-			var includeMap map[string]interface{}
-			v, ok = d.GetOk("include_changes_to")
+			var driftFields map[string]interface{}
+			v, ok = d.GetOk("drift_fields")
 			if ok {
-				if err := json.Unmarshal([]byte(v.(string)), &includeMap); err != nil {
+				if err := json.Unmarshal([]byte(v.(string)), &driftFields); err != nil {
 					return err
 				}
 			}
 
 			// This checks if there were any changes to the remote resource that will need to be corrected
 			// by comparing the current state with the response returned by the api.
-			modifiedResource, hasDifferences := getDelta(obj.data, obj.apiData, ignoreList, includeMap)
+			modifiedResource, hasDifferences := getDelta(obj.data, obj.apiData, ignoreList, driftFields)
 
 			if hasDifferences {
 				log.Printf("resource_api_object.go: Found differences in remote resource\n")

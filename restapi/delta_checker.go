@@ -10,7 +10,7 @@ import (
  * Accepts a third argument that is a set of fields that are to be ignored when looking for differences.
  * Returns 1. the recordedResource overlaid with fields that have been modified in actualResource but not ignored, and 2. a bool true if there were any changes.
  */
-func getDelta(recordedResource map[string]interface{}, actualResource map[string]interface{}, ignoreList []string, includeMap map[string]interface{}) (modifiedResource map[string]interface{}, hasChanges bool) {
+func getDelta(recordedResource map[string]interface{}, actualResource map[string]interface{}, ignoreList []string, driftFields map[string]interface{}) (modifiedResource map[string]interface{}, hasChanges bool) {
 	modifiedResource = map[string]interface{}{}
 	hasChanges = false
 
@@ -26,9 +26,9 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 			modifiedResource[key] = valRecorded
 			continue
 		}
-		// if include_changes_to does not contain the current key, don't compare
-		if includeMap != nil {
-			if _, ok := includeMap[key]; !ok {
+		// if drift_fields does not contain the current key, don't compare
+		if driftFields != nil {
+			if _, ok := driftFields[key]; !ok {
 				modifiedResource[key] = valRecorded
 				continue
 			}
@@ -48,8 +48,8 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 			deeperIgnoreList := _descendIgnoreList(key, ignoreList)
 
 			var nextIncludeMap map[string]interface{}
-			if includeMap != nil {
-				next := includeMap[key]
+			if driftFields != nil {
+				next := driftFields[key]
 				nextMap, ok := next.(map[string]interface{})
 				if !ok {
 					modifiedResource[key] = valRecorded
@@ -94,10 +94,10 @@ func getDelta(recordedResource map[string]interface{}, actualResource map[string
 		if contains(ignoreList, key) {
 			continue
 		}
-		// if include_changes_to does not contain the current key, don't compare
+		// if drift_fields does not contain the current key, don't compare
 		// Don't modify modifiedResource either - we don't want this key to be tracked
-		if includeMap != nil {
-			if _, ok := includeMap[key]; !ok {
+		if driftFields != nil {
+			if _, ok := driftFields[key]; !ok {
 				continue
 			}
 		}
