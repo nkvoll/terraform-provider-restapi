@@ -1,6 +1,7 @@
 package restapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -134,6 +135,7 @@ func addTestAPIObject(input string, t *testing.T, testDebug bool) (testObj testA
 }
 
 func TestAPIObject(t *testing.T) {
+	ctx := context.Background()
 	generatedObjects, apiServerObjects := generateTestObjects(testingDataObjects, t, testDebug)
 
 	/* Construct a local map of test case objects with only the ID populated */
@@ -179,7 +181,7 @@ func TestAPIObject(t *testing.T) {
 				if testDebug {
 					log.Printf("api_object_test.go: Getting data for '%s' test case from server\n", testCase)
 				}
-				err := testingObjects[testCase].readObject()
+				err := testingObjects[testCase].readObject(ctx)
 				if err != nil {
 					t.Fatalf("api_object_test.go: Failed to read data for test case '%s': %s", testCase, err)
 				}
@@ -203,7 +205,7 @@ func TestAPIObject(t *testing.T) {
 			log.Printf("api_object_test.go: Testing update_object()")
 		}
 		testingObjects["minimal"].data["Thing"] = "spoon"
-		testingObjects["minimal"].updateObject()
+		testingObjects["minimal"].updateObject(ctx)
 		if err != nil {
 			t.Fatalf("api_object_test.go: Failed in update_object() test: %s", err)
 		} else if testingObjects["minimal"].apiData["Thing"] != "spoon" {
@@ -218,7 +220,7 @@ func TestAPIObject(t *testing.T) {
 			log.Printf("api_object_test.go: Testing update_object() with update_data")
 		}
 		testingObjects["minimal"].updateData["Thing"] = "knife"
-		testingObjects["minimal"].updateObject()
+		testingObjects["minimal"].updateObject(ctx)
 		if err != nil {
 			t.Fatalf("api_object_test.go: Failed in update_object() test: %s", err)
 		} else if testingObjects["minimal"].apiData["Thing"] != "knife" {
@@ -232,8 +234,8 @@ func TestAPIObject(t *testing.T) {
 		if testDebug {
 			log.Printf("api_object_test.go: Testing delete_object()")
 		}
-		testingObjects["pet"].deleteObject()
-		err = testingObjects["pet"].readObject()
+		testingObjects["pet"].deleteObject(ctx)
+		err = testingObjects["pet"].readObject(ctx)
 		if err != nil {
 			t.Fatalf("api_object_test.go: 'pet' object deleted, but an error was returned when reading the object (expected the provider to cope with this!\n")
 		}
@@ -245,7 +247,7 @@ func TestAPIObject(t *testing.T) {
 			log.Printf("api_object_test.go: Testing create_object()")
 		}
 		testingObjects["pet"].data["Thing"] = "dog"
-		err = testingObjects["pet"].createObject()
+		err = testingObjects["pet"].createObject(ctx)
 		if err != nil {
 			t.Fatalf("api_object_test.go: Failed in create_object() test: %s", err)
 		} else if testingObjects["minimal"].apiData["Thing"] != "knife" {
@@ -254,7 +256,7 @@ func TestAPIObject(t *testing.T) {
 		}
 
 		/* verify it's there */
-		err = testingObjects["pet"].readObject()
+		err = testingObjects["pet"].readObject(ctx)
 		if err != nil {
 			t.Fatalf("api_object_test.go: Failed in read_object() test: %s", err)
 		} else if testingObjects["pet"].apiData["Thing"] != "dog" {
@@ -277,7 +279,7 @@ func TestAPIObject(t *testing.T) {
 		searchKey := "Thing"
 		searchValue := "dog"
 		resultsKey := ""
-		tmpObj, err := object.findObject(queryString, searchKey, searchValue, resultsKey)
+		tmpObj, err := object.findObject(ctx, queryString, searchKey, searchValue, resultsKey)
 		if err != nil {
 			t.Fatalf("api_object_test.go: Failed to find api_object: %s", searchValue)
 		}
@@ -297,8 +299,8 @@ func TestAPIObject(t *testing.T) {
 			log.Printf("api_object_test.go: Testing delete_object() with destroy_data")
 		}
 		testingObjects["pet"].destroyData["destroy"] = "true"
-		testingObjects["pet"].deleteObject()
-		err = testingObjects["pet"].readObject()
+		testingObjects["pet"].deleteObject(ctx)
+		err = testingObjects["pet"].readObject(ctx)
 		if err != nil {
 			t.Fatalf("api_object_test.go: 'pet' object deleted, but an error was returned when reading the object (expected the provider to cope with this!\n")
 		}

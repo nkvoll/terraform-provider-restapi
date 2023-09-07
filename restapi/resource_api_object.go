@@ -1,6 +1,7 @@
 package restapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -16,16 +18,23 @@ func resourceRestAPI() *schema.Resource {
 	isDataSensitive, _ := strconv.ParseBool(GetEnvOrDefault("API_DATA_IS_SENSITIVE", "false"))
 
 	return &schema.Resource{
-		Create: resourceRestAPICreate,
-		Read:   resourceRestAPIRead,
-		Update: resourceRestAPIUpdate,
-		Delete: resourceRestAPIDelete,
-		Exists: resourceRestAPIExists,
+		CreateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+			return diag.FromErr(resourceRestAPICreate(ctx, data, i))
+		},
+		ReadContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+			return diag.FromErr(resourceRestAPIRead(ctx, data, i))
+		},
+		UpdateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+			return diag.FromErr(resourceRestAPIUpdate(ctx, data, i))
+		},
+		DeleteContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+			return diag.FromErr(resourceRestAPIDelete(ctx, data, i))
+		},
 
 		Description: "Acting as a wrapper of cURL, this object supports POST, GET, PUT and DELETE on the specified url",
 
 		Importer: &schema.ResourceImporter{
-			State: resourceRestAPIImport,
+			StateContext: resourceRestAPIImport,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -241,7 +250,7 @@ Since there is nothing in the ResourceData structure other
 	view of the API paths to figure out how to read that object
 	from the API
 */
-func resourceRestAPIImport(d *schema.ResourceData, meta interface{}) (imported []*schema.ResourceData, err error) {
+func resourceRestAPIImport(ctx context.Context, d *schema.ResourceData, meta interface{}) (imported []*schema.ResourceData, err error) {
 	input := d.Id()
 
 	hasTrailingSlash := strings.HasSuffix(input, "/")
@@ -279,7 +288,7 @@ func resourceRestAPIImport(d *schema.ResourceData, meta interface{}) (imported [
 	}
 	log.Printf("resource_api_object.go: Import routine called. Object built:\n%s\n", obj.toString())
 
-	err = obj.readObject()
+	err = obj.readObject(ctx)
 	if err == nil {
 		setResourceState(obj, d)
 		/* Data that we set in the state above must be passed along
@@ -290,14 +299,14 @@ func resourceRestAPIImport(d *schema.ResourceData, meta interface{}) (imported [
 	return imported, err
 }
 
-func resourceRestAPICreate(d *schema.ResourceData, meta interface{}) error {
+func resourceRestAPICreate(ctx context.Context, d *schema.ResourceData, meta interface{}) error {
 	obj, err := makeAPIObject(d, meta)
 	if err != nil {
 		return err
 	}
 	log.Printf("resource_api_object.go: Create routine called. Object built:\n%s\n", obj.toString())
 
-	err = obj.createObject()
+	err = obj.createObject(ctx)
 	if err == nil {
 		/* Setting terraform ID tells terraform the object was created or it exists */
 		d.SetId(obj.id)
@@ -308,7 +317,7 @@ func resourceRestAPICreate(d *schema.ResourceData, meta interface{}) error {
 	return err
 }
 
-func resourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
+func resourceRestAPIRead(ctx context.Context, d *schema.ResourceData, meta interface{}) error {
 	obj, err := makeAPIObject(d, meta)
 	if err != nil {
 		if strings.Contains(err.Error(), "error parsing data provided") {
@@ -320,7 +329,7 @@ func resourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	log.Printf("resource_api_object.go: Read routine called. Object built:\n%s\n", obj.toString())
 
-	err = obj.readObject()
+	err = obj.readObject(ctx)
 	if err == nil {
 		/* Setting terraform ID tells terraform the object was created or it exists */
 		log.Printf("resource_api_object.go: Read resource. Returned id is '%s'\n", obj.id)
@@ -367,7 +376,7 @@ func resourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 	return err
 }
 
-func resourceRestAPIUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceRestAPIUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) error {
 	obj, err := makeAPIObject(d, meta)
 	if err != nil {
 		return err
@@ -377,7 +386,7 @@ func resourceRestAPIUpdate(d *schema.ResourceData, meta interface{}) error {
 	   data so we can copy anything needed before the update */
 	client := meta.(*APIClient)
 	if len(client.copyKeys) > 0 {
-		err = obj.readObject()
+		err = obj.readObject(ctx)
 		if err != nil {
 			return err
 		}
@@ -385,21 +394,21 @@ func resourceRestAPIUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("resource_api_object.go: Update routine called. Object built:\n%s\n", obj.toString())
 
-	err = obj.updateObject()
+	err = obj.updateObject(ctx)
 	if err == nil {
 		setResourceState(obj, d)
 	}
 	return err
 }
 
-func resourceRestAPIDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceRestAPIDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) error {
 	obj, err := makeAPIObject(d, meta)
 	if err != nil {
 		return err
 	}
 	log.Printf("resource_api_object.go: Delete routine called. Object built:\n%s\n", obj.toString())
 
-	err = obj.deleteObject()
+	err = obj.deleteObject(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
 			/* 404 means it doesn't exist. Call that good enough */
@@ -407,27 +416,6 @@ func resourceRestAPIDelete(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	return err
-}
-
-func resourceRestAPIExists(d *schema.ResourceData, meta interface{}) (exists bool, err error) {
-	obj, err := makeAPIObject(d, meta)
-	if err != nil {
-		if strings.Contains(err.Error(), "error parsing data provided") {
-			log.Printf("resource_api_object.go: WARNING! The data passed from Terraform's state is invalid! %v", err)
-			log.Printf("resource_api_object.go: Continuing with partially constructed object...")
-		} else {
-			return exists, err
-		}
-	}
-	log.Printf("resource_api_object.go: Exists routine called. Object built: %s\n", obj.toString())
-
-	/* Assume all errors indicate the object just doesn't exist.
-	This may not be a good assumption... */
-	err = obj.readObject()
-	if err == nil {
-		exists = true
-	}
-	return exists, err
 }
 
 /*

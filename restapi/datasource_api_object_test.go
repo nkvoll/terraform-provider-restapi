@@ -8,6 +8,7 @@ package restapi
 */
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -17,6 +18,7 @@ import (
 )
 
 func TestAccRestapiobject_Basic(t *testing.T) {
+	ctx := context.Background()
 	debug := false
 	apiServerObjects := make(map[string]map[string]interface{})
 
@@ -42,7 +44,7 @@ func TestAccRestapiobject_Basic(t *testing.T) {
 	}
 
 	/* Send a simple object */
-	client.sendRequest("POST", "/api/objects", `
+	client.sendRequest(ctx, "POST", "/api/objects", `
     {
       "id": "1234",
       "first": "Foo",
@@ -52,7 +54,7 @@ func TestAccRestapiobject_Basic(t *testing.T) {
       }
     }
   `)
-	client.sendRequest("POST", "/api/objects", `
+	client.sendRequest(ctx, "POST", "/api/objects", `
     {
       "id": "4321",
       "first": "Foo",
@@ -62,7 +64,7 @@ func TestAccRestapiobject_Basic(t *testing.T) {
       }
     }
   `)
-	client.sendRequest("POST", "/api/objects", `
+	client.sendRequest(ctx, "POST", "/api/objects", `
     {
       "id": "5678",
       "first": "Nested",
@@ -102,7 +104,7 @@ func TestAccRestapiobject_Basic(t *testing.T) {
             }
           `, debug),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRestapiObjectExists("data.restapi_object.Foo", "1234", client),
+					testAccCheckRestapiObjectExists(ctx, "data.restapi_object.Foo", "1234", client),
 					resource.TestCheckResourceAttr("data.restapi_object.Foo", "id", "1234"),
 					resource.TestCheckResourceAttr("data.restapi_object.Foo", "api_data.first", "Foo"),
 					resource.TestCheckResourceAttr("data.restapi_object.Foo", "api_data.last", "Bar"),
@@ -120,7 +122,7 @@ func TestAccRestapiobject_Basic(t *testing.T) {
             }
           `, debug),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRestapiObjectExists("data.restapi_object.Nested", "5678", client),
+					testAccCheckRestapiObjectExists(ctx, "data.restapi_object.Nested", "5678", client),
 					resource.TestCheckResourceAttr("data.restapi_object.Nested", "id", "5678"),
 					resource.TestCheckResourceAttr("data.restapi_object.Nested", "api_data.first", "Nested"),
 					resource.TestCheckResourceAttr("data.restapi_object.Nested", "api_data.last", "Fields"),
@@ -138,7 +140,7 @@ func TestAccRestapiobject_Basic(t *testing.T) {
             }
           `, debug),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRestapiObjectExists("data.restapi_object.Baz", "4321", client),
+					testAccCheckRestapiObjectExists(ctx, "data.restapi_object.Baz", "4321", client),
 					resource.TestCheckResourceAttr("data.restapi_object.Baz", "id", "4321"),
 					resource.TestCheckResourceAttr("data.restapi_object.Baz", "api_data.first", "Foo"),
 					resource.TestCheckResourceAttr("data.restapi_object.Baz", "api_data.last", "Baz"),
@@ -157,7 +159,7 @@ func TestAccRestapiobject_Basic(t *testing.T) {
 			         }
 			       `, debug),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRestapiObjectExists("data.restapi_object.Baz", "4321", client),
+					testAccCheckRestapiObjectExists(ctx, "data.restapi_object.Baz", "4321", client),
 					resource.TestCheckResourceAttr("data.restapi_object.Baz", "id", "4321"),
 					resource.TestCheckResourceAttr("data.restapi_object.Baz", "api_data.first", "Foo"),
 					resource.TestCheckResourceAttr("data.restapi_object.Baz", "api_data.last", "Baz"),

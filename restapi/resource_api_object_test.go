@@ -12,6 +12,7 @@ package restapi
   "github.com/hashicorp/terraform/config"
 */
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -23,6 +24,7 @@ import (
 
 // example.Widget represents a concrete Go type that represents an API resource
 func TestAccRestApiObject_Basic(t *testing.T) {
+	ctx := context.Background()
 	debug := false
 	apiServerObjects := make(map[string]map[string]interface{})
 
@@ -58,7 +60,7 @@ func TestAccRestApiObject_Basic(t *testing.T) {
 					make(map[string]interface{}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRestapiObjectExists("restapi_object.Foo", "1234", client),
+					testAccCheckRestapiObjectExists(ctx, "restapi_object.Foo", "1234", client),
 					resource.TestCheckResourceAttr("restapi_object.Foo", "id", "1234"),
 					resource.TestCheckResourceAttr("restapi_object.Foo", "api_data.first", "Foo"),
 					resource.TestCheckResourceAttr("restapi_object.Foo", "api_data.last", "Bar"),
@@ -74,7 +76,7 @@ func TestAccRestApiObject_Basic(t *testing.T) {
 					make(map[string]interface{}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRestapiObjectExists("restapi_object.Foo", "1234", client),
+					testAccCheckRestapiObjectExists(ctx, "restapi_object.Foo", "1234", client),
 					resource.TestCheckResourceAttr("restapi_object.Foo", "id", "1234"),
 					resource.TestCheckResourceAttr("restapi_object.Foo", "api_data.first", "Updated"),
 					resource.TestCheckResourceAttr("restapi_object.Foo", "api_data.last", "Value"),
@@ -95,7 +97,7 @@ func TestAccRestApiObject_Basic(t *testing.T) {
 					},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckRestapiObjectExists("restapi_object.Bar", "4321", client),
+					testAccCheckRestapiObjectExists(ctx, "restapi_object.Bar", "4321", client),
 					resource.TestCheckResourceAttr("restapi_object.Bar", "id", "4321"),
 					resource.TestCheckResourceAttrSet("restapi_object.Bar", "api_data.config"),
 				),
@@ -106,9 +108,12 @@ func TestAccRestApiObject_Basic(t *testing.T) {
 	svr.Shutdown()
 }
 
-/* This function generates a terraform JSON configuration from
-   a name, JSON data and a list of params to set by coaxing it
-   all to maps and then serializing to JSON */
+/*
+This function generates a terraform JSON configuration from
+
+	a name, JSON data and a list of params to set by coaxing it
+	all to maps and then serializing to JSON
+*/
 func generateTestResource(name string, data string, params map[string]interface{}) string {
 	strData, _ := json.Marshal(data)
 	config := []string{

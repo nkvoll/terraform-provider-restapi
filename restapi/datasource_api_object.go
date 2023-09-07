@@ -1,14 +1,16 @@
 package restapi
 
 import (
+	"context"
 	"log"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceRestAPI() *schema.Resource {
 	return &schema.Resource{
-		Read:        dataSourceRestAPIRead,
+		ReadContext: dataSourceRestAPIRead,
 		Description: "Performs a cURL get command on the specified url.",
 
 		Schema: map[string]*schema.Schema{
@@ -104,7 +106,7 @@ func dataSourceRestAPI() *schema.Resource {
 	}
 }
 
-func dataSourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceRestAPIRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	path := d.Get("path").(string)
 	searchPath := d.Get("search_path").(string)
 	queryString := d.Get("query_string").(string)
@@ -153,11 +155,11 @@ func dataSourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 
 	obj, err := NewAPIObject(client, opts)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	if _, err := obj.findObject(queryString, searchKey, searchValue, resultsKey); err != nil {
-		return err
+	if _, err := obj.findObject(ctx, queryString, searchKey, searchValue, resultsKey); err != nil {
+		return diag.FromErr(err)
 	}
 
 	/* Back to terraform-specific stuff. Create an api_object with the ID and refresh it object */
@@ -167,12 +169,12 @@ func dataSourceRestAPIRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(obj.id)
 
-	err = obj.readObject()
+	err = obj.readObject(ctx)
 	if err == nil {
 		/* Setting terraform ID tells terraform the object was created or it exists */
 		log.Printf("datasource_api_object.go: Data resource. Returned id is '%s'\n", obj.id)
 		d.SetId(obj.id)
 		setResourceState(obj, d)
 	}
-	return err
+	return diag.FromErr(err)
 }

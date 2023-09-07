@@ -1,6 +1,7 @@
 package restapi
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 )
 
 func TestAccRestApiObject_importBasic(t *testing.T) {
+	ctx := context.Background()
 	debug := false
 	apiServerObjects := make(map[string]map[string]interface{})
 
@@ -32,7 +34,7 @@ func TestAccRestApiObject_importBasic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client.sendRequest("POST", "/api/objects", `{ "id": "1234", "first": "Foo", "last": "Bar" }`)
+	client.sendRequest(ctx, "POST", "/api/objects", `{ "id": "1234", "first": "Foo", "last": "Bar" }`)
 
 	resource.UnitTest(t, resource.TestCase{
 		Providers: testAccProviders,
@@ -52,7 +54,7 @@ func TestAccRestApiObject_importBasic(t *testing.T) {
 				ImportStateIdPrefix: "/api/objects/",
 				ImportStateVerify:   true,
 				/* create_response isn't populated during import (we don't know the API response from creation) */
-				ImportStateVerifyIgnore: []string{"debug", "data", "create_response"},
+				ImportStateVerifyIgnore: []string{"debug", "data", "create_response", "ignore_all_server_changes"},
 			},
 		},
 	})

@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -278,7 +279,7 @@ func (obj *APIObject) updateState(state string) error {
 	return err
 }
 
-func (obj *APIObject) createObject() error {
+func (obj *APIObject) createObject(ctx context.Context) error {
 	/* Failsafe: The constructor should prevent this situation, but
 	   protect here also. If no id is set, and the API does not respond
 	   with the id of whatever gets created, we have no way to know what
@@ -297,7 +298,7 @@ func (obj *APIObject) createObject() error {
 		postPath = fmt.Sprintf("%s?%s", obj.postPath, obj.createQueryString)
 	}
 
-	resultString, err := obj.apiClient.sendRequest(obj.createMethod, strings.Replace(postPath, "{id}", obj.id, -1), string(b))
+	resultString, err := obj.apiClient.sendRequest(ctx, obj.createMethod, strings.Replace(postPath, "{id}", obj.id, -1), string(b))
 	if err != nil {
 		return err
 	}
@@ -319,12 +320,12 @@ func (obj *APIObject) createObject() error {
 			log.Printf("api_object.go: Requesting created object from API (write_returns_object=%t, create_returns_object=%t)...\n",
 				obj.apiClient.writeReturnsObject, obj.apiClient.createReturnsObject)
 		}
-		err = obj.readObject()
+		err = obj.readObject(ctx)
 	}
 	return err
 }
 
-func (obj *APIObject) readObject() error {
+func (obj *APIObject) readObject(ctx context.Context) error {
 	if obj.id == "" {
 		return fmt.Errorf("cannot read an object unless the ID has been set")
 	}
@@ -337,7 +338,7 @@ func (obj *APIObject) readObject() error {
 		getPath = fmt.Sprintf("%s?%s", obj.getPath, obj.readQueryString)
 	}
 
-	resultString, err := obj.apiClient.sendRequest(obj.readMethod, strings.Replace(getPath, "{id}", obj.id, -1), "")
+	resultString, err := obj.apiClient.sendRequest(ctx, obj.readMethod, strings.Replace(getPath, "{id}", obj.id, -1), "")
 	if err != nil {
 		if strings.Contains(err.Error(), "unexpected response code '404'") {
 			log.Printf("api_object.go: 404 error while refreshing state for '%s' at path '%s'. Removing from state.", obj.id, obj.getPath)
@@ -362,7 +363,7 @@ func (obj *APIObject) readObject() error {
 			queryString = fmt.Sprintf("%s&%s", obj.readSearch["query_string"], obj.queryString)
 		}
 		resultsKey := obj.readSearch["results_key"]
-		objFound, err := obj.findObject(queryString, searchKey, searchValue, resultsKey)
+		objFound, err := obj.findObject(ctx, queryString, searchKey, searchValue, resultsKey)
 		if err != nil {
 			obj.id = ""
 			return nil
@@ -374,7 +375,7 @@ func (obj *APIObject) readObject() error {
 	return obj.updateState(resultString)
 }
 
-func (obj *APIObject) updateObject() error {
+func (obj *APIObject) updateObject(ctx context.Context) error {
 	if obj.id == "" {
 		return fmt.Errorf("cannot update an object unless the ID has been set")
 	}
@@ -397,7 +398,7 @@ func (obj *APIObject) updateObject() error {
 		putPath = fmt.Sprintf("%s?%s", obj.putPath, obj.updateQueryString)
 	}
 
-	resultString, err := obj.apiClient.sendRequest(obj.updateMethod, strings.Replace(putPath, "{id}", obj.id, -1), string(b))
+	resultString, err := obj.apiClient.sendRequest(ctx, obj.updateMethod, strings.Replace(putPath, "{id}", obj.id, -1), string(b))
 	if err != nil {
 		return err
 	}
@@ -411,12 +412,12 @@ func (obj *APIObject) updateObject() error {
 		if obj.debug {
 			log.Printf("api_object.go: Requesting updated object from API (write_returns_object=false)...\n")
 		}
-		err = obj.readObject()
+		err = obj.readObject(ctx)
 	}
 	return err
 }
 
-func (obj *APIObject) deleteObject() error {
+func (obj *APIObject) deleteObject(ctx context.Context) error {
 	if obj.id == "" {
 		log.Printf("WARNING: Attempting to delete an object that has no id set. Assuming this is OK.\n")
 		return nil
@@ -439,7 +440,7 @@ func (obj *APIObject) deleteObject() error {
 		b = destroyData
 	}
 
-	_, err := obj.apiClient.sendRequest(obj.destroyMethod, strings.Replace(deletePath, "{id}", obj.id, -1), string(b))
+	_, err := obj.apiClient.sendRequest(ctx, obj.destroyMethod, strings.Replace(deletePath, "{id}", obj.id, -1), string(b))
 	if err != nil {
 		return err
 	}
@@ -447,7 +448,7 @@ func (obj *APIObject) deleteObject() error {
 	return nil
 }
 
-func (obj *APIObject) findObject(queryString string, searchKey string, searchValue string, resultsKey string) (map[string]interface{}, error) {
+func (obj *APIObject) findObject(ctx context.Context, queryString string, searchKey string, searchValue string, resultsKey string) (map[string]interface{}, error) {
 	var objFound map[string]interface{}
 	var dataArray []interface{}
 	var ok bool
@@ -466,7 +467,7 @@ func (obj *APIObject) findObject(queryString string, searchKey string, searchVal
 	if obj.debug {
 		log.Printf("api_object.go: Calling API on path '%s'", searchPath)
 	}
-	resultString, err := obj.apiClient.sendRequest(obj.apiClient.readMethod, searchPath, "")
+	resultString, err := obj.apiClient.sendRequest(ctx, obj.apiClient.readMethod, searchPath, "")
 	if err != nil {
 		return objFound, err
 	}

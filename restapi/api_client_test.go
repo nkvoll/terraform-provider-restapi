@@ -1,6 +1,7 @@
 package restapi
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"testing"
@@ -11,6 +12,7 @@ var apiClientServer *http.Server
 
 func TestAPIClient(t *testing.T) {
 	debug := false
+	ctx := context.Background()
 
 	if debug {
 		log.Println("client_test.go: Starting HTTP server")
@@ -40,7 +42,7 @@ func TestAPIClient(t *testing.T) {
 	if debug {
 		log.Printf("api_client_test.go: Testing standard OK request\n")
 	}
-	res, err = client.sendRequest("GET", "/ok", "")
+	res, err = client.sendRequest(ctx, "GET", "/ok", "")
 	if err != nil {
 		t.Fatalf("client_test.go: %s", err)
 	}
@@ -51,7 +53,7 @@ func TestAPIClient(t *testing.T) {
 	if debug {
 		log.Printf("api_client_test.go: Testing redirect request\n")
 	}
-	res, err = client.sendRequest("GET", "/redirect", "")
+	res, err = client.sendRequest(ctx, "GET", "/redirect", "")
 	if err != nil {
 		t.Fatalf("client_test.go: %s", err)
 	}
@@ -63,7 +65,7 @@ func TestAPIClient(t *testing.T) {
 	if debug {
 		log.Printf("api_client_test.go: Testing timeout aborts requests\n")
 	}
-	_, err = client.sendRequest("GET", "/slow", "")
+	_, err = client.sendRequest(ctx, "GET", "/slow", "")
 	if err == nil {
 		t.Fatalf("client_test.go: Timeout did not trigger on slow request")
 	}
@@ -74,7 +76,7 @@ func TestAPIClient(t *testing.T) {
 	startTime := time.Now().Unix()
 
 	for i := 0; i < 4; i++ {
-		client.sendRequest("GET", "/ok", "")
+		client.sendRequest(ctx, "GET", "/ok", "")
 	}
 
 	duration := time.Now().Unix() - startTime

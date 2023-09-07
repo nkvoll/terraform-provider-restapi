@@ -1,6 +1,7 @@
 package restapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func testAccCheckRestapiObjectExists(n string, id string, client *APIClient) resource.TestCheckFunc {
+func testAccCheckRestapiObjectExists(ctx context.Context, n string, id string, client *APIClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -39,7 +40,7 @@ func testAccCheckRestapiObjectExists(n string, id string, client *APIClient) res
 			return err
 		}
 
-		err = obj.readObject()
+		err = obj.readObject(ctx)
 		if err != nil {
 			return err
 		}

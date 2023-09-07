@@ -76,7 +76,7 @@ type APIClient struct {
 	oauthConfig         *clientcredentials.Config
 }
 
-//NewAPIClient makes a new api client for RESTful calls
+// NewAPIClient makes a new api client for RESTful calls
 func NewAPIClient(opt *apiClientOpt) (*APIClient, error) {
 	if opt.debug {
 		log.Printf("api_client.go: Constructing debug api_client\n")
@@ -210,9 +210,12 @@ func (client *APIClient) toString() string {
 	return buffer.String()
 }
 
-/* Helper function that handles sending/receiving and handling
-   of HTTP data in and out. */
-func (client *APIClient) sendRequest(method string, path string, data string) (string, error) {
+/*
+Helper function that handles sending/receiving and handling
+
+	of HTTP data in and out.
+*/
+func (client *APIClient) sendRequest(ctx context.Context, method string, path string, data string) (string, error) {
 	fullURI := client.uri + path
 	var req *http.Request
 	var err error
@@ -224,9 +227,9 @@ func (client *APIClient) sendRequest(method string, path string, data string) (s
 	buffer := bytes.NewBuffer([]byte(data))
 
 	if data == "" {
-		req, err = http.NewRequest(method, fullURI, nil)
+		req, err = http.NewRequestWithContext(ctx, method, fullURI, nil)
 	} else {
-		req, err = http.NewRequest(method, fullURI, buffer)
+		req, err = http.NewRequestWithContext(ctx, method, fullURI, buffer)
 
 		/* Default of application/json, but allow headers array to overwrite later */
 		if err == nil {

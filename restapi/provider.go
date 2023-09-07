@@ -1,10 +1,11 @@
 package restapi
 
 import (
-	"fmt"
+	"context"
 	"math"
 	"net/url"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -202,12 +203,11 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"restapi_object": dataSourceRestAPI(),
 		},
-		ConfigureFunc: configureProvider,
+		ConfigureContextFunc: configureProvider,
 	}
 }
 
-func configureProvider(d *schema.ResourceData) (interface{}, error) {
-
+func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	/* As "data-safe" as terraform says it is, you'd think
 	   it would have already coaxed this to a slice FOR me */
 	copyKeys := make([]string, 0)
@@ -289,10 +289,10 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 
 	if v, ok := d.GetOk("test_path"); ok {
 		testPath := v.(string)
-		_, err := client.sendRequest(client.readMethod, testPath, "")
+		_, err := client.sendRequest(ctx, client.readMethod, testPath, "")
 		if err != nil {
-			return client, fmt.Errorf("a test request to %v after setting up the provider did not return an OK response - is your configuration correct? %v", testPath, err)
+			return client, diag.Errorf("a test request to %v after setting up the provider did not return an OK response - is your configuration correct? %v", testPath, err)
 		}
 	}
-	return client, err
+	return client, diag.FromErr(err)
 }
