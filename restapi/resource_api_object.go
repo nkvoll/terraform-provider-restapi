@@ -217,6 +217,12 @@ func resourceRestAPI() *schema.Resource {
 					return warns, errs
 				},
 			},
+			"drift_fields_from_data": {
+				Type:        schema.TypeBool,
+				Description: "Set this to 'true' to use the data as drift fields to make only explicitly set fields are checked for drift. Default: false",
+				Optional:    true,
+				Default:     false,
+			},
 		}, /* End schema */
 
 	}
@@ -327,8 +333,13 @@ func resourceRestAPIRead(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 
 			var driftFields map[string]interface{}
-			v, ok = d.GetOk("drift_fields")
-			if ok {
+			if v, ok := d.GetOk("drift_fields_from_data"); ok {
+				if v.(bool) {
+					driftFields = obj.data
+				}
+			}
+
+			if v, ok = d.GetOk("drift_fields"); ok {
 				if err := json.Unmarshal([]byte(v.(string)), &driftFields); err != nil {
 					return err
 				}
