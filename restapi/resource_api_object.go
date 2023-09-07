@@ -311,6 +311,8 @@ func resourceRestAPICreate(ctx context.Context, d *schema.ResourceData, meta int
 		/* Setting terraform ID tells terraform the object was created or it exists */
 		d.SetId(obj.id)
 		setResourceState(obj, d)
+		/* Only set during create for APIs that don't return sensitive data on subsequent retrieval */
+		d.Set("create_response", obj.apiResponse)
 	}
 	return err
 }
